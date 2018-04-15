@@ -165,16 +165,49 @@ stabilize_unaligned(int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems
 
 void test_avxsort_unaligned();
 
-#define NUM_ITEMS (12)  /* 2 * L2_CACHE_SIZE */
+void test_blocksize();
+
+#define NUM_ITEMS (12345678)  /* 2 * L2_CACHE_SIZE */
 
 int main(int argc, char *argv[])
 {
-		
-		test_avxsort_unaligned();
+		test_blocksize();
+		//test_avxsort_unaligned();
         return 0;
 }
 
-
+void test_blocksize()
+{
+	int64_t * input, * keys_in, *output, *keys_out;
+	int count = 0;
+	input = (int64_t*)malloc(BLOCKSIZE* sizeof (int64_t));
+	output = (int64_t*)malloc(BLOCKSIZE * sizeof (int64_t));
+	keys_in = (int64_t*)malloc(BLOCKSIZE * sizeof (int64_t));
+	keys_out = (int64_t*)malloc(BLOCKSIZE * sizeof (int64_t));
+	for(int i = 0; i < BLOCKSIZE;i++)
+	{
+		input[i] = rand()%1000;
+		keys_in[i] = i;
+	}
+	avxsort_block(&input,&keys_in, &output, &keys_out, BLOCKSIZE);
+	/*
+	for(int i = 0; i < BLOCKSIZE;i++)
+	{
+			printf("%" PRId64 "", output[i]);
+			printf(" %" PRId64 "\n", keys_out[i]);
+	}
+	*/
+	int tracker = 0;
+	/*
+	for(int i = 0; i < BLOCKSIZE-2;i++)
+	{
+		if((output[i+1]==output[i])&&(keys_out[i+1] < keys_out[i])&&(keys_out[i+2] < keys_out[i+1]))
+		{
+				printf("EFAFDDASFASD\n");
+		}
+	}
+	*/
+}
 void test_avxsort_unaligned()
 {
 		//local arrays
@@ -231,7 +264,11 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 
 	
 	
-	//hypothesis1: you store all the addresses of each of the data chunks
+	//create 2d array for pointers ptrs (values) and ptrsv (positions
+	//ptrs is a 2d array which stores in the first column the first addresses of each data chunk
+	//the second column stores the first addresses of the "output"
+	//same difference with ptrsv
+	//sizes just store the value 16384
 	for (i = 0; i <= nchunks; i++) {
 		ptrs[i][0] = input + i * BLOCKSIZE;
 		ptrsv[i][0] = inputv + i * BLOCKSIZE;
@@ -239,13 +276,23 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 		ptrsv[i][1] = outputv + i * BLOCKSIZE;
 		sizes[i] = BLOCKSIZE;
 	}
+	
+	
+	
+	
 
 	/** 1) Divide the input into chunks fitting into L2 cache. */
 	/* one more chunk if not divisible */
-	//hypothesis2: you sort each block of data
+	//sort each block of data given along with the blocksize
 	for (i = 0; i < nchunks; i++) {
+		//given each address, sort the input (pass in the argument of itself)
 		avxsort_block(&ptrs[i][0], &ptrsv[i][0], &ptrs[i][1], &ptrsv[i][1], BLOCKSIZE);
 		// dump_arr_int64("check 0", ptrs[i][1], BLOCKSIZE);
+		
+		
+		//simply swap the addresses (input -> output) (output -> input) between each of the rows
+		//oh so thats why the input ptr has a value of zero after execution, it switches places with 
+		//the output ptrs
 		swap(&ptrs[i][0], &ptrs[i][1]);
 		swap(&ptrsv[i][0], &ptrsv[i][1]);
 	}
@@ -261,11 +308,13 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 		sizes[i] = rem;
 	}
 
-
+	
+	
 	/**
 	* 2.a) for itr = [(logM) .. (logN -1)], merge sequences of length 2^itr to
 	* obtain sorted sequences of length 2^{itr+1}.
 	*/
+	//if the remainder is greater than zero, you have additional chunks
 	nchunks += (rem > 0);
 	/* printf("Merge chunks = %d\n", nchunks); */
 	const uint64_t logN = ceil(log2(nitems));
