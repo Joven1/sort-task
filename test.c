@@ -165,7 +165,7 @@ stabilize_unaligned(int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems
 
 void test_avxsort_unaligned();
 
-#define NUM_ITEMS (16384*14+12903847)  /* 2 * L2_CACHE_SIZE */
+#define NUM_ITEMS (12)  /* 2 * L2_CACHE_SIZE */
 
 int main(int argc, char *argv[])
 {
@@ -215,7 +215,7 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 
 	uint64_t i;
 	
-	//BLOCK SIZE == 16384 or 2^14 for some reason
+	//BLOCK SIZE == 16384 or 2^14 for some reason (found out, my comp supports only up to 2^14 cache) blockSize = l2cace / 2*sizeofint64
 	uint64_t nchunks = (nitems / BLOCKSIZE);
 	
 	//this is the remainder after you divided up the blocks of data 2^14
@@ -229,6 +229,9 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 	int64_t * ptrsv[nchunks + 1][2];/* [chunk-in, chunk-out-tmp] */
 	uint32_t sizes[nchunks + 1];
 
+	
+	
+	//hypothesis1: you store all the addresses of each of the data chunks
 	for (i = 0; i <= nchunks; i++) {
 		ptrs[i][0] = input + i * BLOCKSIZE;
 		ptrsv[i][0] = inputv + i * BLOCKSIZE;
@@ -239,6 +242,7 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 
 	/** 1) Divide the input into chunks fitting into L2 cache. */
 	/* one more chunk if not divisible */
+	//hypothesis2: you sort each block of data
 	for (i = 0; i < nchunks; i++) {
 		avxsort_block(&ptrs[i][0], &ptrsv[i][0], &ptrs[i][1], &ptrsv[i][1], BLOCKSIZE);
 		// dump_arr_int64("check 0", ptrs[i][1], BLOCKSIZE);
@@ -246,6 +250,7 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 		swap(&ptrsv[i][0], &ptrsv[i][1]);
 	}
 
+	//you sort the remaining block of data
 	if (rem) {
 		// xzl_bug_on(1);
 		/* sort the last chunk which is less than BLOCKSIZE */
@@ -264,6 +269,10 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 	nchunks += (rem > 0);
 	/* printf("Merge chunks = %d\n", nchunks); */
 	const uint64_t logN = ceil(log2(nitems));
+	
+	//log2 blocksize = log2(BLOCKSIZE) and logN is log2(nitems)
+	
+	//hypothesis 3: you go from the log2(blocksize) to log2 of n items (rounded up)
 	for (i = LOG2_BLOCKSIZE; i < logN; i++) {
 
 		uint64_t k = 0;
