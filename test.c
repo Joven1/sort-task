@@ -186,15 +186,42 @@ void test_blocksize()
 	keys_out = (int64_t*)malloc(BLOCKSIZE * sizeof (int64_t));
 	for(int i = 0; i < BLOCKSIZE;i++)
 	{
-		input[i] = rand()%1000;
+		input[i] = rand()%1234;
 		keys_in[i] = i;
 	}
 	avxsort_block(&input,&keys_in, &output, &keys_out, BLOCKSIZE);
-	/*
-	for(int i = 0; i < BLOCKSIZE;i++)
+	int asdf = 0;
+	for(int i = 0; i < BLOCKSIZE; i++)
 	{
-			printf("%" PRId64 "", output[i]);
-			printf(" %" PRId64 "\n", keys_out[i]);
+		printf("INPUT:  ");
+		printf("%" PRIu64 " ",input[i]);
+		printf("%" PRIu64 " ",keys_in[i]);
+		printf("OUTPUT:  ");
+		printf("%" PRIu64 " ",output[i]);
+		printf("%" PRIu64 "\n",keys_out[i]);
+		if(input[i] > input[i+1])
+		{
+			printf("%d\n",asdf);
+			asdf=0;
+		}
+		asdf++;
+	}
+	
+	//proof that avxsort_block works correctly
+	/*
+	int j = 1;
+	for(int i = 0; i < BLOCKSIZE;i=i+4)
+	{
+		
+		for(j = 0; j < 3; j++)
+		{
+			if((input[i+j]==input[i+j+1])&&(keys_in[i+j]> keys_in[i+j+1]))
+			{
+				printf("ERROR\n");
+			}
+		    
+		}
+	
 	}
 	*/
 	int tracker = 0;
@@ -229,7 +256,9 @@ void test_avxsort_unaligned()
 			printf("%" PRId64 "", output[i]);
 			printf(" %" PRId64 "\n", keys_out[i]);
 		}
+		
 		*/
+		
 }
 
 void

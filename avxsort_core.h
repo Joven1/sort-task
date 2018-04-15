@@ -891,11 +891,13 @@ inline void __attribute__((always_inline))
 avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
               int64_t ** outputptrv, int BLOCK_SIZE)
 {
+	//sorting but for this particular block
     int64_t * ptrs[2];
     int64_t * ptrsv[2];
-
+	
+	//logBSZ == 14 or log2(16384)
     const uint64_t logBSZ = log2(BLOCK_SIZE);
-
+	
     ptrs[0] = *inputptr;
     ptrs[1] = *outputptr;
     ptrsv[0] = *inputptrv;
@@ -906,7 +908,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
     block16 * inptrv = (block16 *) ptrsv[0];
 
     block16 * const end = (block16 *) (ptrs[0] + BLOCK_SIZE);
-
+	//this is executed 1024 times it sorts everything in sequences of 4 by taking in arguments of size 16
     while(inptr < end) {
         inregister_sort_keyval32((int64_t*)inptr,(int64_t*)inptrv,
                                  (int64_t*)inptr, (int64_t*)inptrv);
@@ -914,23 +916,36 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
         inptrv ++;
     }
 
-
+	//BREAKPOINT 2
     /**
      * 1.b) for itr <- [(logK) .. (logM - 3)]
      *  - Simultaneously merge 4 sequences (using a K by K
      *  network) of length 2^itr to obtain sorted seq. of 2^{itr+1}
      */
     uint64_t j;
+	//14 - 2 = 12
     const uint64_t jend = logBSZ - 2;
-
+	
+	//case when j == 2
+	//ptridx = 1 if j is odd, 0 if j is even
+	//this time, we now have an output that has lists stored by 8 elements
+	//store in the output array
     j = 2;
     {
+		//ptridx is equal to 0
+		//ptridx is zero
+		//ptridx^1 is 1
         int ptridx = j & 1;
+		
+		//inp = ptrs[0]
+		//out = ptrs[1]
+		
         int64_t * inp = (int64_t *) ptrs[ptridx];
         int64_t * out = (int64_t *) ptrs[ptridx ^ 1];
         int64_t * inpv = (int64_t *) ptrsv[ptridx];
         int64_t * outv = (int64_t *) ptrsv[ptridx ^ 1];
 
+		//the end is the block size
         int64_t * const end = (int64_t*) (inp + BLOCK_SIZE);
 
         /**
@@ -939,7 +954,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
          */
         const uint64_t inlen  = (1 << j);
         const uint64_t outlen = (inlen << 1);
-
+		//this executes 2048 times
         while(inp < end) {
 
             merge4_eqlen(inp, inpv, inp + inlen, inpv + inlen, out, outv, inlen);
@@ -949,9 +964,14 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
             outv += outlen;
         }
     }
+
+	//store sorted sequences by 16 and store inside of te input
     j = 3;
     {
         int ptridx = j & 1;
+
+		//inp = ptrx[1]
+		//out = ptrx[0]
         int64_t * inp = (int64_t *) ptrs[ptridx];
         int64_t * out = (int64_t *) ptrs[ptridx ^ 1];
         int64_t * inpv = (int64_t *) ptrsv[ptridx];
@@ -964,7 +984,10 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
          */
         const uint64_t inlen  = (1 << j);
         const uint64_t outlen = (inlen << 1);
-
+		int i = 0;
+		
+		
+		//this executes 1024 times or 16 lists?
         while(inp < end) {
 
             merge8_eqlen(inp, inpv, inp + inlen, inpv + inlen, out, outv, inlen);
@@ -972,8 +995,10 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
             inpv += outlen;
             out += outlen;
             outv += outlen;
+			i++;
         }
     }
+	int k;
     for(j = 4; j < jend; j++) {
         int ptridx = j & 1;
         int64_t * inp = (int64_t *) ptrs[ptridx];
@@ -1003,6 +1028,11 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
             /* merge 4 seqs simultaneously (always >= 4) */
             /* merge 2 seqs simultaneously (always >= 2) */
         }
+		k++;
+		if(k==6)
+		{
+			return;
+		}
     }
 
     /**
