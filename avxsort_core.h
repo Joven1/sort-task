@@ -13,11 +13,13 @@
 #include <math.h>               /* log2()  */
 #ifdef __cplusplus
 #include <algorithm>            /* sort()  */
+#include "type.h"
 #endif
 
 #include "avxcommon.h"
 #include "utils.h"
 #include "params.h"
+#include "type.h"
 /* #include "iacaMarks.h" */
 
 
@@ -801,7 +803,7 @@ merge16_varlen(int64_t * restrict inpA, int64_t * restrict inpAv,
 
         if((lenA - ai) >= 8) {
             /* if A still has some times to be output with AVX */
-            uint32_t lenA8 = ((lenA-ai) & ~0x7);
+            uint32_t lenA8 = ((lenA-ai) & ~0x7); //1111
             register block8 * inA  = (block8 *) inpA;
             block8 * const    endA = (block8 *) (inpA + lenA8);
             block8 * outp = (block8 *) out;

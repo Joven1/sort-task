@@ -4,7 +4,7 @@
 #include "utils.h"
 #include "params.h"
 #include <xplane_lib.h>
-#include <log.h>
+//#include <log.h>
 #include <mm/batch.h>
 #include <iostream>
 #include <cstring>

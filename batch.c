@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <mm/batch.h>
 #include <mm/sbuff.h>
-#include "log.h"
+//#include "log.h"
 
 #define X_SUCCESS			0
 

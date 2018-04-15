@@ -1,5 +1,5 @@
 /* To Build
-   g++ -O3 -std=c++11 -mavx2 -I../../include/ test.c utils.cpp -o test
+   
 */
 
 #include <immintrin.h> /* AVX intrinsics */
@@ -10,11 +10,94 @@
 #include "utils.h"
 using namespace std;
 
+void randomized_cmp_kv_pd(void)
+{
+	int j = 2;
+	int k = 0;
+	while(j==2)
+	{
+		double inA[4];
+		double inAv[4];
+		double inB[4];
+		double inBv[4];
+		double ret[4];
+		for(int i = 0; i < 4; i++)
+		{
+			inA[i] = rand()%1000;
+			inAv[i] = rand()%1000;
+			inB[i] = rand()%1000;
+			inBv[i]= rand()%1000;
+			ret[i] = rand()%1000;
+		}
+		__m256d inA_r = _mm256_loadu_pd(inA);
+		__m256d inAv_r = _mm256_loadu_pd(inAv);
+		__m256d inB_r = _mm256_loadu_pd(inB);
+		__m256d inBv_r = _mm256_loadu_pd(inBv);
+		__m256d keyh, keyl, valh, vall;
+
+		_mm256_cmp_kv_pd(inA_r, inAv_r, inB_r, inBv_r, valh, keyh, vall, keyl);
+
+
+		for(int i = 0; i < 3; i++)
+		{
+			if(((valh[i] == vall[i])&&(keyl[i]>keyh[i])))
+			{
+				j = 1;
+				_mm256_storeu_pd(ret, inA_r);
+				dump_arr_double("inA_r", ret);
+				_mm256_storeu_pd(ret, inB_r);
+				dump_arr_double("inB_r", ret);
+				_mm256_storeu_pd(ret, valh);
+				dump_arr_double("valh", ret);
+				_mm256_storeu_pd(ret, vall);
+				dump_arr_double("vall", ret);
+				
+				
+				_mm256_storeu_pd(ret, inAv_r);
+				dump_arr_double("inAv_r", ret);
+				_mm256_storeu_pd(ret, inBv_r);
+				dump_arr_double("inBv_r", ret);
+				_mm256_storeu_pd(ret, keyh);
+				dump_arr_double("keyh", ret);
+				_mm256_storeu_pd(ret, keyl);
+				dump_arr_double("keyl", ret);
+				break;
+			}
+			else if(valh[i] < vall[i])
+			{
+				printf("ERROR IS FOUND\n");
+				_mm256_storeu_pd(ret, inA_r);
+				dump_arr_double("inA_r", ret);
+				_mm256_storeu_pd(ret, inAv_r);
+				dump_arr_double("inAv_r", ret);
+				_mm256_storeu_pd(ret, inB_r);
+				dump_arr_double("inB_r", ret);
+				_mm256_storeu_pd(ret, inBv_r);
+				dump_arr_double("inBv_r", ret);
+				_mm256_storeu_pd(ret, keyh);
+				dump_arr_double("keyh", ret);
+				_mm256_storeu_pd(ret, valh);
+				dump_arr_double("valh", ret);
+				_mm256_storeu_pd(ret, keyl);
+				dump_arr_double("keyl", ret);
+				_mm256_storeu_pd(ret, vall);
+				dump_arr_double("vall", ret);
+				j = 1;
+			}
+		}
+	
+}
+}
+	
+
+
+
+
 void test_cmp_kv_pd(void)
 {
-    double inA[4] = {5.1, 7, 6, 2};
+    double inA[4] = {1, 2, 3, 4};
     double inAv[4] = {5, 7, 6, 2};
-    double inB[4] = {3, 9, 8, 2};
+    double inB[4] = {11, 12, 13, 14};
     double inBv[4] = {3, 9, 8, 4};
 
     double ret[4];
@@ -74,51 +157,216 @@ void test_merge16_varlen(void)
     dump_arr_int64("outv", outv, LENA + LENB);
 }
 
-extern void
+void
 avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv, 
                   int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems);
+void
+stabilize_unaligned(int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems);
 
-#define NUM_ITEMS (1024 * 1024)  /* 2 * L2_CACHE_SIZE */
+void test_avxsort_unaligned();
+
+#define NUM_ITEMS (16384*14+12903847)  /* 2 * L2_CACHE_SIZE */
 
 int main(int argc, char *argv[])
 {
-    /* FILE *fh; */
-    /* int64_t record[8]; */
-    /* uint32_t count; */
-    /* int64_t *inA, *inAv, *outA, *outAv; */
-    /* inA = (int64_t*)malloc(NUM_ITEMS * sizeof(int64_t)); */
-    /* inAv = (int64_t*)malloc(NUM_ITEMS * sizeof(int64_t)); */
-    /* outA = (int64_t*)malloc(NUM_ITEMS * sizeof(int64_t)); */
-    /* outAv = (int64_t*)malloc(NUM_ITEMS * sizeof(int64_t)); */
-    /* if (argc != 2) { */
-    /*     cout << "Usage test Filename" << endl; */
-    /*     return -1; */
-    /* } */
+		
+		test_avxsort_unaligned();
+        return 0;
+}
 
-    /* fh = fopen(argv[1], "r+"); */
-    /* if (!fh) { */
-    /*     cout << "File " << argv[1] << "cannot be opened." << endl; */
-    /*     return 1; */
-    /* } */
 
-    /* for (count = 0; count < NUM_ITEMS; ++count) { */
-    /*     if (fscanf(fh, "%ld, %ld", &record[0], &record[1]) == EOF) { */
-    /*         cout << "Error!" << endl; */
-    /*         return 1; */
-    /*     } */
-    /*     inA[count] = record[0]; */
-    /*     inAv[count] = record[1]; */
-    /* } */
-    /* dump_arr_int64("inA", inA, 256); */
-    /* dump_arr_int64("inAv", inAv, 256); */
-    /* avxsort_unaligned(&inA, &inAv, &outA, &outAv, NUM_ITEMS); */
-    /* dump_arr_int64("outA", outA, 256); */
-    /* dump_arr_int64("outAv", outAv, 256); */
-    
-    /* free(inA); */
-    /* free(inAv); */
-    /* free(outA); */
-    /* free(outAv); */
-    test_merge16_varlen();
-    return 0;
+void test_avxsort_unaligned()
+{
+		//local arrays
+		int64_t * input, * keys_in, *output, *keys_out;
+		int count = 0;
+		input = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
+		output = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
+		keys_in = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
+		keys_out = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
+		for(int i = 0; i < NUM_ITEMS;i++)
+		{
+			input[i] = rand()%100;
+			keys_in[i] = i;
+		}
+		avxsort_unaligned(&input,&keys_in,&output,&keys_out,NUM_ITEMS);
+		/*
+		for(int i = 0; i < NUM_ITEMS;i++)
+		{
+			printf("%" PRId64 "", output[i]);
+			printf(" %" PRId64 "\n", keys_out[i]);
+		}
+		*/
+}
+
+void
+avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
+	int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems)
+{
+	if (nitems <= 0)
+		return;
+	// dump_arr_int64("input", *inputptr, nitems);
+
+	//dereference the addresses
+	int64_t * input = *inputptr;
+	int64_t * output = *outputptr;
+	int64_t * inputv = *inputptrv;
+	int64_t * outputv = *outputptrv;
+
+	uint64_t i;
+	
+	//BLOCK SIZE == 16384 or 2^14 for some reason
+	uint64_t nchunks = (nitems / BLOCKSIZE);
+	
+	//this is the remainder after you divided up the blocks of data 2^14
+	int rem = (nitems % BLOCKSIZE);
+
+	//BREAKPOINT 1
+	
+	
+	/* each chunk keeps track of its temporary memory offset */
+	int64_t * ptrs[nchunks + 1][2];/* [chunk-in, chunk-out-tmp] */
+	int64_t * ptrsv[nchunks + 1][2];/* [chunk-in, chunk-out-tmp] */
+	uint32_t sizes[nchunks + 1];
+
+	for (i = 0; i <= nchunks; i++) {
+		ptrs[i][0] = input + i * BLOCKSIZE;
+		ptrsv[i][0] = inputv + i * BLOCKSIZE;
+		ptrs[i][1] = output + i * BLOCKSIZE;
+		ptrsv[i][1] = outputv + i * BLOCKSIZE;
+		sizes[i] = BLOCKSIZE;
+	}
+
+	/** 1) Divide the input into chunks fitting into L2 cache. */
+	/* one more chunk if not divisible */
+	for (i = 0; i < nchunks; i++) {
+		avxsort_block(&ptrs[i][0], &ptrsv[i][0], &ptrs[i][1], &ptrsv[i][1], BLOCKSIZE);
+		// dump_arr_int64("check 0", ptrs[i][1], BLOCKSIZE);
+		swap(&ptrs[i][0], &ptrs[i][1]);
+		swap(&ptrsv[i][0], &ptrsv[i][1]);
+	}
+
+	if (rem) {
+		// xzl_bug_on(1);
+		/* sort the last chunk which is less than BLOCKSIZE */
+		avxsort_rem(&ptrs[i][0], &ptrsv[i][0], &ptrs[i][1], &ptrsv[i][1], rem);
+		// dump_arr_int64("check 1", ptrs[i][1], rem);
+		swap(&ptrs[i][0], &ptrs[i][1]);
+		swap(&ptrsv[i][0], &ptrsv[i][1]);
+		sizes[i] = rem;
+	}
+
+
+	/**
+	* 2.a) for itr = [(logM) .. (logN -1)], merge sequences of length 2^itr to
+	* obtain sorted sequences of length 2^{itr+1}.
+	*/
+	nchunks += (rem > 0);
+	/* printf("Merge chunks = %d\n", nchunks); */
+	const uint64_t logN = ceil(log2(nitems));
+	for (i = LOG2_BLOCKSIZE; i < logN; i++) {
+
+		uint64_t k = 0;
+		for (uint64_t j = 0; j < (nchunks - 1); j += 2) {
+			int64_t * inpA = ptrs[j][0];
+			int64_t * inpB = ptrs[j + 1][0];
+			int64_t * out = ptrs[j][1];
+			int64_t * inpAv = ptrsv[j][0];
+			int64_t * inpBv = ptrsv[j + 1][0];
+			int64_t * outv = ptrsv[j][1];
+
+			uint32_t  sizeA = sizes[j];
+			uint32_t  sizeB = sizes[j + 1];
+
+			/* need to change */
+			merge16_varlen(inpA, inpAv, inpB, inpBv, out, outv, sizeA, sizeB);
+
+			/* setup new pointers */
+			ptrs[k][0] = out;
+			ptrs[k][1] = inpA;
+			ptrsv[k][0] = outv;
+			ptrsv[k][1] = inpAv;
+
+			sizes[k] = sizeA + sizeB;
+			k++;
+		}
+		
+
+		if ((nchunks % 2)) {
+			/* just move the pointers */
+			ptrs[k][0] = ptrs[nchunks - 1][0];
+			ptrs[k][1] = ptrs[nchunks - 1][1];
+			ptrsv[k][0] = ptrsv[nchunks - 1][0];
+			ptrsv[k][1] = ptrsv[nchunks - 1][1];
+
+			sizes[k] = sizes[nchunks - 1];
+			k++;
+		}
+
+		nchunks = k;
+	}
+	/* finally swap input/output pointers, where output holds the sorted list */
+	*outputptr = ptrs[0][0];
+	*inputptr = ptrs[0][1];
+	*outputptrv = ptrsv[0][0];
+	*inputptrv = ptrsv[0][1];
+
+}
+
+void
+stabilize_unaligned(int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems)
+{
+	uint64_t i = 0;
+	//start at the beginning
+	int64_t start = 0;
+	uint64_t items = 0;
+	uint64_t set = 1;
+	i = 0;
+	int64_t * outputptrv_start;
+	int64_t * outputptr_start;
+	outputptrv_start=*outputptrv;
+	outputptr_start=*outputptr;
+	
+	int64_t ** outputptrv_index;
+	int64_t ** outputptr_index;
+	
+	outputptrv_index = outputptrv;
+	outputptr_index = outputptr;
+
+	int64_t offset = 0;
+	uint64_t current_items = 0;
+	uint64_t first_index = 0;
+	i = 0;
+	set = 1;
+/*
+	while(i < nitems)
+	{
+		//compare the current value to its offset
+		if(*(*(outputptr)) != *(*(outputptr)+offset))
+		{
+		}
+		offset++;
+		set++;
+		i++;
+	}
+*/
+	for(i = 0; i < NUM_ITEMS;i++)
+	{
+		/*
+		printf("%" PRIu64 " \n",*(*outputptr));
+		*outputptr = *outputptr + 1;
+		*/
+		if((*(*outputptr))!=(*(*outputptr+offset)))
+		{
+			avxsort_unaligned(outputptrv,outputptr,outputptrv,outputptr,offset);
+			*outputptr = *outputptr+offset;
+			*outputptrv = *outputptrv+offset;	
+			offset = 0;
+		}
+		offset++;
+	}
+	avxsort_unaligned(outputptrv,outputptr,outputptrv,outputptr,offset);
+	*outputptrv = outputptrv_start;
+	*outputptr = outputptr_start;
+	return;
 }

@@ -2,7 +2,8 @@
 #define UTILS_H
 
 #include <inttypes.h>
-#include <xplane_lib.h>
+//#include "xplane_lib.h"
+#include "type.h"
 
 void dump_arr_hex(const char name[], uint64_t* arr);
 void dump_arr_double(const char name[], double* arr);

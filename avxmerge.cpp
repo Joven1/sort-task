@@ -5,7 +5,7 @@
 #include <mm/batch.h>
 #include <iostream>
 #include <cstring>
-#include <log.h>
+//#include <log.h>
 
 using namespace std;
 

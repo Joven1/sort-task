@@ -12,7 +12,7 @@
 #define AVXCOMMON_H
 
 #include <immintrin.h> /* AVX intrinsics */
-
+#include <stdio.h>
 /* just to enable compilation with g++ */
 #if defined(__cplusplus)
 #undef restrict
@@ -21,10 +21,10 @@
 
 typedef struct block4  {int64_t val[4]; } block4;
 typedef struct block8  {int64_t val[8]; } block8;
-typedef struct block16 {int64_t val[16];} block16;
+typedef struct block16 { int64_t val[16]; } block16;
 
-/** 
- * There are 2 ways to implement branches: 
+/**
+ * There are 2 ways to implement branches:
  *     1) With conditional move instr.s using inline assembly (IFELSEWITHCMOVE).
  *     2) With software predication (IFELSEWITHPREDICATION).
  *     3) With normal if-else
@@ -33,7 +33,8 @@ typedef struct block16 {int64_t val[16];} block16;
 #define IFELSEWITHPREDICATION 1
 #define IFELSEWITHNORMAL      0
 
-/** Load 2 AVX 256-bit registers from the given address */
+ /** Load 2 AVX 256-bit registers from the given address */
+//Translation: If you have an array, this will load the first four values in REGL and the last four values in REGH
 #define LOAD8(REGL, REGH, ADDR)                                         \
     do {                                                                \
         REGL = _mm256_load_pd((double const *) ADDR);                   \
@@ -41,6 +42,7 @@ typedef struct block16 {int64_t val[16];} block16;
     } while(0)
 
 /** Load unaligned 2 AVX 256-bit registers from the given address */
+//Translation: If you have an array, this will load the first four values in REGL and the last four values in REGH
 #define LOAD8U(REGL, REGH, ADDR)                                        \
     do {                                                                \
         REGL = _mm256_loadu_pd((double const *) ADDR);                  \
@@ -80,14 +82,23 @@ static inline void _mm256_cmp_kv_pd(const __m256d keyA, const __m256d valA,
                                      __m256d& keyl, __m256d& vall)
 {
     // sz: avx2 does not have mask_move???
-    __m256d maskh = _mm256_cmp_pd(keyA, keyB, _CMP_LE_OQ);
-    // __m256d maskl = _mm256_cmp_pd(keyA, keyB, _CMP_GT_OQ);
+    //check if the keys are the same
+    __m256d eq = _mm256_cmp_pd(keyA,keyB,_CMP_EQ_OQ);
+    __m256d gt = _mm256_cmp_pd(valA,valB,_CMP_GT_OQ);
 
-    // keyl = _mm256_or_pd(_mm256_and_pd(keyA, maskh), _mm256_and_pd(keyB, maskl));
-    // keyh = _mm256_or_pd(_mm256_and_pd(keyB, maskh), _mm256_and_pd(keyA, maskl));
+  
+    __m256d gt_and_eq = _mm256_and_pd(eq,gt);
+    __m256d vector1 = {1,1,1,1};
+    __m256d vector2 = {1,1,1,1};
+    __m256d ones = _mm256_cmp_pd(vector1,vector2,_CMP_EQ_OQ);
 
-    // vall = _mm256_or_pd(_mm256_and_pd(valA, maskh), _mm256_and_pd(valB, maskl));
-    // valh = _mm256_or_pd(_mm256_and_pd(valB, maskh), _mm256_and_pd(valA, maskl));
+    __m256d not_gt_and_eq = _mm256_xor_pd(ones,gt_and_eq);
+
+    __m256d submask = _mm256_cmp_pd(keyA, keyB, _CMP_LE_OQ);    
+
+    __m256d maskh = _mm256_and_pd(submask,not_gt_and_eq);
+
+
     keyl = _mm256_or_pd(_mm256_and_pd(keyA, maskh), _mm256_andnot_pd(maskh, keyB));
     keyh = _mm256_or_pd(_mm256_and_pd(keyB, maskh), _mm256_andnot_pd(maskh, keyA));
 
