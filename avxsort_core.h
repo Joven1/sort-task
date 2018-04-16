@@ -1000,6 +1000,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
 	
 	int k;
 	
+	//start merging from lengths 2^4 to 2^12
     for(j = 4; j < jend; j++) {
         int ptridx = j & 1;
         int64_t * inp = (int64_t *) ptrs[ptridx];
