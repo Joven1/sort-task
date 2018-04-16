@@ -199,8 +199,8 @@ void test_blocksize()
 	}
 	avxsort_block(&input,&keys_in, &output, &keys_out, BLOCKSIZE);
 	
-	print_input(input,keys_in,output,keys_out);
-	test_output_lists(input,keys_in,output,keys_out,BLOCKSIZE);
+//	print_input(input,keys_in,output,keys_out);
+	//test_output_lists(input,keys_in,output,keys_out,BLOCKSIZE);
 	
 	
 	int tracker = 0;

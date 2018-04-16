@@ -1019,6 +1019,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
 
             merge16_eqlen(inp, inpv, inp + inlen, inpv + inlen,
                           out, outv, inlen);
+						  
             inp += outlen;
             inpv += outlen;
             out += outlen;
@@ -1032,7 +1033,8 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
 		k++;
 		
     }
-
+	printf("%" PRIu64 " ",j);
+	printf("ASDFASDFASDF\nb");
     /**
      * 1.c) for itr = (logM - 2), simultaneously merge 2 sequences
      *  (using a 2K by 2K network) of length M/4 to obtain sorted
