@@ -915,7 +915,6 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
         inptr ++;
         inptrv ++;
     }
-
 	//BREAKPOINT 2
     /**
      * 1.b) for itr <- [(logK) .. (logM - 3)]
@@ -964,7 +963,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
             outv += outlen;
         }
     }
-
+	
 	//store sorted sequences by 16 and store inside of te input
     j = 3;
     {
@@ -998,7 +997,9 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
 			i++;
         }
     }
+	
 	int k;
+	
     for(j = 4; j < jend; j++) {
         int ptridx = j & 1;
         int64_t * inp = (int64_t *) ptrs[ptridx];
@@ -1029,10 +1030,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
             /* merge 2 seqs simultaneously (always >= 2) */
         }
 		k++;
-		if(k==6)
-		{
-			return;
-		}
+		
     }
 
     /**

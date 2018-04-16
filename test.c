@@ -167,6 +167,14 @@ void test_avxsort_unaligned();
 
 void test_blocksize();
 
+void test_input_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,int list_length);
+
+void test_output_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,int list_length);
+
+void print_output(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
+
+void print_input(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
+
 #define NUM_ITEMS (12345678)  /* 2 * L2_CACHE_SIZE */
 
 int main(int argc, char *argv[])
@@ -186,10 +194,49 @@ void test_blocksize()
 	keys_out = (int64_t*)malloc(BLOCKSIZE * sizeof (int64_t));
 	for(int i = 0; i < BLOCKSIZE;i++)
 	{
-		input[i] = rand()%1234;
-		keys_in[i] = i;
+		input[i] = rand()%10;
+		keys_in[i] = rand()%10;
 	}
 	avxsort_block(&input,&keys_in, &output, &keys_out, BLOCKSIZE);
+	
+	print_input(input,keys_in,output,keys_out);
+	test_output_lists(input,keys_in,output,keys_out,BLOCKSIZE);
+	
+	
+	int tracker = 0;
+	/*
+	for(int i = 0; i < BLOCKSIZE-2;i++)
+	{
+		if((output[i+1]==output[i])&&(keys_out[i+1] < keys_out[i])&&(keys_out[i+2] < keys_out[i+1]))
+		{
+				printf("EFAFDDASFASD\n");
+		}
+	}
+	*/
+}
+
+void print_output(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out)
+{
+	int asdf = 0;
+	for(int i = 0; i < BLOCKSIZE; i++)
+	{
+		printf("INPUT:  ");
+		printf("%" PRIu64 " ",input[i]);
+		printf("%" PRIu64 " ",keys_in[i]);
+		printf("OUTPUT:  ");
+		printf("%" PRIu64 " ",output[i]);
+		printf("%" PRIu64 "\n",keys_out[i]);
+		if(output[i] > output[i+1])
+		{
+			printf("%d\n",asdf);
+			asdf=0;
+		}
+		asdf++;
+	}
+}
+
+void print_input(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out)
+{
 	int asdf = 0;
 	for(int i = 0; i < BLOCKSIZE; i++)
 	{
@@ -206,35 +253,42 @@ void test_blocksize()
 		}
 		asdf++;
 	}
-	
-	//proof that avxsort_block works correctly
-	/*
-	int j = 1;
-	for(int i = 0; i < BLOCKSIZE;i=i+4)
+}
+
+void test_input_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,int list_length)
+{
+	int k = 1;
+	for(int i = 0; i < BLOCKSIZE;i+=list_length)
 	{
-		
-		for(j = 0; j < 3; j++)
+		for(int j = 0; j < list_length-1; j++)
 		{
-			if((input[i+j]==input[i+j+1])&&(keys_in[i+j]> keys_in[i+j+1]))
+			if((input[i+j]==input[i+k])&&(keys_in[i+j]>keys_in[i+k]))
 			{
 				printf("ERROR\n");
 			}
-		    
+			k++;
 		}
-	
+		k = 1;
 	}
-	*/
-	int tracker = 0;
-	/*
-	for(int i = 0; i < BLOCKSIZE-2;i++)
-	{
-		if((output[i+1]==output[i])&&(keys_out[i+1] < keys_out[i])&&(keys_out[i+2] < keys_out[i+1]))
-		{
-				printf("EFAFDDASFASD\n");
-		}
-	}
-	*/
 }
+
+void test_output_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,int list_length)
+{
+	int k = 1;
+	for(int i = 0; i < BLOCKSIZE;i+=list_length)
+	{
+		for(int j = 0; j < list_length-1; j++)
+		{
+			if((output[i+j]==output[i+k])&&(keys_out[i+j]>keys_out[i+k]))
+			{
+				printf("ERROR\n");
+			}
+			k++;
+		}
+		k = 1;
+	}
+}
+
 void test_avxsort_unaligned()
 {
 		//local arrays
