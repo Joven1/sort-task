@@ -177,7 +177,9 @@ void print_input(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *key
 
 void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
 
-#define NUM_ITEMS (12345678)  /* 2 * L2_CACHE_SIZE */
+void test_sort();
+
+#define NUM_ITEMS (10000000)  /* 2 * L2_CACHE_SIZE */
 
 int main(int argc, char *argv[])
 {
@@ -196,16 +198,54 @@ void test_blocksize()
 	keys_out = (int64_t*)malloc(BLOCKSIZE * sizeof (int64_t));
 	for(int i = 0; i < BLOCKSIZE;i++)
 	{
-		input[i] = rand()%10;
-		keys_in[i] = rand()%10;
+		input[i] = rand()%1000;
+		keys_in[i] = i%2;
 	}
 	avxsort_block(&input,&keys_in, &output, &keys_out, BLOCKSIZE);
 	//print_output(input,keys_in,output,keys_out);
 	//print_input(input,keys_in,output,keys_out);
-	test_input_lists(input,keys_in,output,keys_out,64);
-	test_output_lists(input,keys_in,output,keys_out,128);
+	test_input_lists(input,keys_in,output,keys_out,BLOCKSIZE/2);
+	test_output_lists(input,keys_in,output,keys_out,BLOCKSIZE);
 	test_sorted_list_size(input,keys_in,output,keys_out);
+	for(int i = 0; i < BLOCKSIZE;i++)
+	{
+		if((output[i] == output[i+1])&&(keys_out[i] > keys_out[i+1]))
+		{
+			printf("%d ERROR\n",i);	
+		}
+		printf("%" PRIu64 " ",output[i]);
+		printf("%" PRIu64 "\n",keys_out[i]);
+	}
 }
+
+void test_sort()
+{
+	printf("yes\n");
+	int64_t * input, * keys_in, *output, *keys_out;
+	int count = 0;
+	input = (int64_t*)malloc(NUM_ITEMS* sizeof (int64_t));
+	output = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
+	keys_in = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
+	keys_out = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
+	for(int i = 0; i < NUM_ITEMS;i++)
+	{
+		input[i] = rand()%10;
+		keys_in[i] = i;
+	}
+	avxsort_unaligned(&input,&keys_in, &output, &keys_out, NUM_ITEMS);
+	//print_output(input,keys_in,output,keys_out);
+	//print_input(input,keys_in,output,keys_out);
+	//test_output_lists(input,keys_in,output,keys_out,NUM_ITEMS);
+	test_sorted_list_size(input,keys_in,output,keys_out);
+	for(int i = 0; i < NUM_ITEMS-1;i++)
+	{
+		if((output[i] == output[i+1])&&(keys_out[i] > keys_out[i+1]))
+		{
+			printf("%d ERROR\n",i);	
+		}
+	}
+}
+
 void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out)
 {
 	int asdf = 1;

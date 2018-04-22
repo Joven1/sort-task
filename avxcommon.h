@@ -229,6 +229,7 @@ static inline void _mm256_cmp_kv_pd(const __m256d keyA, const __m256d valA,
 // haven't finish
 #if IFELSEWITHCMOVE
 #define IFELSECONDMOVE(NXT, NXTV, INA, INAV, INB, INBV, INCR)           \
+printf("yespls");                                                           \
     do {                                                                \
         register block4 * tmpA, * tmpB, * tmpAv, *tmpBv;                \
         register int64_t tmpKey;                                        \
@@ -256,10 +257,12 @@ static inline void _mm256_cmp_kv_pd(const __m256d keyA, const __m256d valA,
 
 #elif IFELSEWITHPREDICATION
 #define IFELSECONDMOVE(NXT, NXTV, INA, INAV, INB, INBV, INCR)           \
-printf("%" PRIu64 " %" PRIu64 " ",*((int64_t *)INA),*((int64_t *)INB));\
             do {                                                        \
                 int8_t cmp = *((int64_t *)INA) < *((int64_t *)INB);     \
-				printf("%" PRIu8 "\n",cmp);                                 \
+				if(*((int64_t *)INA) == *((int64_t *)INB))				\
+				{														\
+					cmp = *((int64_t *)INAV) < *((int64_t *)INBV);		\
+				}														\
                 NXT  = cmp ? INA : INB;                                 \
                 NXTV = cmp ? INAV : INBV;                               \
                 INA += cmp;                                             \
