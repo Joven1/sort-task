@@ -175,6 +175,8 @@ void print_output(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *ke
 
 void print_input(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
 
+void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
+
 #define NUM_ITEMS (12345678)  /* 2 * L2_CACHE_SIZE */
 
 int main(int argc, char *argv[])
@@ -198,23 +200,36 @@ void test_blocksize()
 		keys_in[i] = rand()%10;
 	}
 	avxsort_block(&input,&keys_in, &output, &keys_out, BLOCKSIZE);
-	
-//	print_input(input,keys_in,output,keys_out);
-	//test_output_lists(input,keys_in,output,keys_out,BLOCKSIZE);
-	
-	
-	int tracker = 0;
-	/*
-	for(int i = 0; i < BLOCKSIZE-2;i++)
-	{
-		if((output[i+1]==output[i])&&(keys_out[i+1] < keys_out[i])&&(keys_out[i+2] < keys_out[i+1]))
-		{
-				printf("EFAFDDASFASD\n");
-		}
-	}
-	*/
+	//print_output(input,keys_in,output,keys_out);
+	//print_input(input,keys_in,output,keys_out);
+	test_input_lists(input,keys_in,output,keys_out,64);
+	test_output_lists(input,keys_in,output,keys_out,128);
+	test_sorted_list_size(input,keys_in,output,keys_out);
 }
-
+void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out)
+{
+	int asdf = 1;
+	for(int i = 0; i < BLOCKSIZE; i++)
+	{
+		if(input[i] > input[i+1])
+		{
+			printf("The input size: %d\n",asdf);
+			asdf=1;
+			break;
+		}
+		asdf++;
+	}
+	for(int i = 0; i < BLOCKSIZE; i++)
+	{
+		if(output[i] > output[i+1])
+		{
+			printf("The output size: %d\n",asdf);
+			asdf=0;
+			break;
+		}
+		asdf++;
+	}
+}
 void print_output(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out)
 {
 	int asdf = 0;
@@ -226,11 +241,6 @@ void print_output(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *ke
 		printf("OUTPUT:  ");
 		printf("%" PRIu64 " ",output[i]);
 		printf("%" PRIu64 "\n",keys_out[i]);
-		if(output[i] > output[i+1])
-		{
-			printf("%d\n",asdf);
-			asdf=0;
-		}
 		asdf++;
 	}
 }
@@ -246,11 +256,6 @@ void print_input(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *key
 		printf("OUTPUT:  ");
 		printf("%" PRIu64 " ",output[i]);
 		printf("%" PRIu64 "\n",keys_out[i]);
-		if(input[i] > input[i+1])
-		{
-			printf("%d\n",asdf);
-			asdf=0;
-		}
 		asdf++;
 	}
 }
@@ -264,7 +269,8 @@ void test_input_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_t
 		{
 			if((input[i+j]==input[i+k])&&(keys_in[i+j]>keys_in[i+k]))
 			{
-				printf("ERROR\n");
+				printf("Index: %d ",i+j);
+				printf("Element 1: %" PRIu64 " %" PRIu64 " Element 2: %" PRIu64 " %" PRIu64 "\n",input[i+j],keys_in[i+j],input[i+k],keys_in[i+k]);
 			}
 			k++;
 		}
@@ -281,7 +287,8 @@ void test_output_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_
 		{
 			if((output[i+j]==output[i+k])&&(keys_out[i+j]>keys_out[i+k]))
 			{
-				printf("ERROR\n");
+				printf("Index: %d ",i+j);
+				printf("Element 1: %" PRIu64 " %" PRIu64 " Element 2: %" PRIu64 " %" PRIu64 "\n",output[i+j],keys_out[i+j],output[i+k],keys_out[i+k]);
 			}
 			k++;
 		}

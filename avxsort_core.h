@@ -929,6 +929,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
 	//ptridx = 1 if j is odd, 0 if j is even
 	//this time, we now have an output that has lists stored by 8 elements
 	//store in the output array
+	
     j = 2;
     {
 		//ptridx is equal to 0
@@ -998,7 +999,7 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
         }
     }
 	
-	int k;
+	int k = 0;
 	
 	//start merging from lengths 2^4 to 2^12
     for(j = 4; j < jend; j++) {
@@ -1032,10 +1033,8 @@ avxsort_block(int64_t ** inputptr, int64_t ** inputptrv, int64_t ** outputptr,
             /* merge 2 seqs simultaneously (always >= 2) */
         }
 		k++;
-		
     }
-	printf("%" PRIu64 " ",j);
-	printf("ASDFASDFASDF\nb");
+
     /**
      * 1.c) for itr = (logM - 2), simultaneously merge 2 sequences
      *  (using a 2K by 2K network) of length M/4 to obtain sorted
