@@ -85,7 +85,6 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
      * obtain sorted sequences of length 2^{itr+1}.
      */
     nchunks += (rem > 0);
-    /* printf("Merge chunks = %d\n", nchunks); */
     const uint64_t logN = ceil(log2(nitems));
     for(i = LOG2_BLOCKSIZE; i < logN; i++) {
 

@@ -744,9 +744,11 @@ merge16_varlen(int64_t * restrict inpA, int64_t * restrict inpAv,
         /* flush the register to one of the lists */
         int64_t hireg[4] __attribute__((aligned(32)));
         _mm256_store_pd ( (double *)hireg, outreg2h2);
-
-        if(*((int64_t *)inA) >= *((int64_t*)(hireg+3))) {
+		//not sure what happened and i am afraid to ask
+		
+        if(*((int64_t *)inA) > *((int64_t*)(hireg+3))) {
             /* store the last remaining register values to A */
+			//printf("WTF %" PRIu64 " %" PRIu64"\n",*((int64_t *)inA),*((int64_t*)(hireg+3)));
             inA --;
             STORE8U(inA, outreg2l1, outreg2l2);
             STORE8U(((block8 *)inA + 1), outreg2h1, outreg2h2);
@@ -756,6 +758,7 @@ merge16_varlen(int64_t * restrict inpA, int64_t * restrict inpAv,
         }
         else {
             /* store the last remaining register values to B */
+			//printf("Kappa\n\n");
             inB --;
             STORE8U(inB, outreg2l1, outreg2l2);
             STORE8U(((block8 *)inB + 1), outreg2h1, outreg2h2);
@@ -763,7 +766,7 @@ merge16_varlen(int64_t * restrict inpA, int64_t * restrict inpAv,
             STORE8U(inBv, outreg2l1v, outreg2l2v);
             STORE8U(((block8 *)inBv + 1), outreg2h1v, outreg2h2v);
         }
-
+		
         ai = ((int64_t *)inA - inpA);
         bi = ((int64_t *)inB - inpB);
 
@@ -779,6 +782,10 @@ merge16_varlen(int64_t * restrict inpA, int64_t * restrict inpAv,
         int64_t * in = inpB;
         int64_t * inv = inpBv;
         uint32_t cmp = (*inpA < *inpB);
+		if(*inpA == *inpB)
+		{
+			cmp = (*inpAv < *inpBv);
+		}
         uint32_t notcmp = !cmp;
 
         ai += cmp;
@@ -1079,7 +1086,7 @@ inline __attribute__((__always_inline__))
 int keycmp(const void * k1, const void * k2)
 {
     int64_t val = (*(int64_t *)k1 - *(int64_t *)k2);
-
+	printf("ASDF\n");
     int ret = 0;
     if(val < 0)
         ret = -1;
@@ -1105,12 +1112,15 @@ struct kvpair {
 struct {
     bool operator()(struct kvpair a, struct kvpair b) const
     {
+		printf("asdf\n");
         return a.key < b.key;
     }
 } kvcmp;
+//FOUND YOU
 inline void __attribute__((always_inline))
 x2_sort(int64_t *key, int64_t *val, uint32_t nitems)
 {
+	/*
     uint32_t i;
     struct kvpair *arr = (struct kvpair*)malloc(nitems * sizeof(struct kvpair));
     // dump_arr_int64("key", key, nitems);
@@ -1120,12 +1130,51 @@ x2_sort(int64_t *key, int64_t *val, uint32_t nitems)
         arr[i].val = val[i];
     }
     std::sort(arr, arr + nitems, kvcmp);
-    for (i = 0; i < nitems; ++i) {
-        key[i] = arr[i].key;
-        val[i] = arr[i].val;
-    }
-    free(arr);
+	*/
+	for(int i = 0; i < nitems - 1;i++)
+	{
+		for(int j = 0; j < nitems-i-1;j++)
+		{
+			if(key[j]>key[j+1])
+			{
+				uint64_t temp = key[j+1];
+				key[j+1] = key[j];
+				key[j] = temp;
+				temp = val[j+1];
+				val[j+1] = val[j];
+				val[j] = temp;
+			}
+			else if(key[j] == key[j+1])
+			{
+				if(val[j]>val[j+1])
+				{
+					uint64_t temp = key[j+1];
+					key[j+1] = key[j];
+					key[j] = temp;
+					temp = val[j+1];
+					val[j+1] = val[j];
+					val[j] = temp;
+				}
+			}
+		}
+	}
+	
+	for(int i = 0; i < nitems-1; i++)
+	{
+		if(key[i]>key[i+1])
+		{
+			printf("NOT SORTED\n");
+		}
+		if((key[i]==key[i+1])&&(val[i]>val[i+1]))
+		{
+			printf("NOTSORTED\n");
+		}
+	}
+   // free(arr);
+	
+	
 }
+
 /**
  * Sorts the last chunk of the input, which is less than BLOCKSIZE tuples.
  * @note This function assumes a hard-coded BLOCKSIZE of 16384 and nitems must
@@ -1184,7 +1233,6 @@ avxsort_rem(int64_t ** inputptr, int64_t ** inputptrv,
         ptrsv[i][0] = inpv + pos;
         ptrsv[i][1] = outv + pos;
         sizes[i]   = n;
-
         x2_sort(ptrs[i][0], ptrsv[i][0], n);
 
         /* no need to swap */
