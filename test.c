@@ -10,6 +10,12 @@
 #include "utils.h"
 using namespace std;
 
+/**
+ * Test all possible combinations for AVX cmp
+ *
+ * @param void
+ */
+
 void randomized_cmp_kv_pd(void)
 {
 	int j = 2;
@@ -92,6 +98,11 @@ void randomized_cmp_kv_pd(void)
 
 
 
+/**
+ * Test singular combination for AVX cmp
+ *
+ * @param void
+ */
 
 void test_cmp_kv_pd(void)
 {
@@ -127,6 +138,13 @@ void test_cmp_kv_pd(void)
     _mm256_storeu_pd(ret, vall);
     dump_arr_double("vall", ret);
 }
+
+
+/**
+ * Test combinations for AVX inregister sort
+ *
+ * @param void
+ */
 void test_inregister_sort(void)
 {
     int64_t in[16] =  { 4, 12, 345, 54,    2,  534,  24,  24, 132,  23, 123,  14, 14,  41, 53};
@@ -157,30 +175,62 @@ void test_merge16_varlen(void)
     dump_arr_int64("outv", outv, LENA + LENB);
 }
 
+
 void
 avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv, 
                   int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems);
 void
 stabilize_unaligned(int64_t ** outputptr, int64_t ** outputptrv, uint64_t nitems);
 
+
+/**
+ * Test avx sort
+ *
+ * @param void
+ */
 void test_avxsort_unaligned();
 
+
+
+/**
+ * Test avxsort_block 
+ *
+ * @param void
+ */
 void test_blocksize();
 
+/**
+ * Test input/output lists created
+ *
+ */
 void test_input_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,int list_length);
 
 void test_output_lists(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,int list_length);
 
+
+/**
+ * Print input/output lists created
+ *
+ */
 void print_output(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
 
 void print_input(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
 
-void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out);
 
+/**
+ * Find size of sorted elements in array
+ *
+ */
+void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,uint64_t nitems);
+
+/**
+ * Randomized test for stability
+ *
+ */
 void test_sort();
 
 
-#define NUM_ITEMS (10000000)  /* 2 * L2_CACHE_SIZE */
+#define NUM_ITEMS (100000000000)  /* 2 * L2_CACHE_SIZE */
 
 int main(int argc, char *argv[])
 {
@@ -206,7 +256,7 @@ void test_blocksize()
 	//print_input(input,keys_in,output,keys_out);
 	test_input_lists(input,keys_in,output,keys_out,BLOCKSIZE/2);
 	test_output_lists(input,keys_in,output,keys_out,BLOCKSIZE);
-	test_sorted_list_size(input,keys_in,output,keys_out);
+	//test_sorted_list_size(input,keys_in,output,keys_out,(uint64_t)BLOCKSIZE);
 	int errorcount = 0;
 	for(int i = 0; i < BLOCKSIZE;i++)
 	{
@@ -221,51 +271,55 @@ void test_blocksize()
 
 void test_sort()
 {
-	int64_t * input, * keys_in, *output, *keys_out;
-	int count = 0;
-	input = (int64_t*)malloc(NUM_ITEMS* sizeof (int64_t));
-	output = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
-	keys_in = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
-	keys_out = (int64_t*)malloc(NUM_ITEMS * sizeof (int64_t));
-	for(int i = 0; i < NUM_ITEMS;i++)
+	for(int64_t k = 1; k < NUM_ITEMS; k=2*k)
 	{
-		input[i] = rand()%100;
-		keys_in[i] = i;
-	}
-	avxsort_unaligned(&input,&keys_in, &output, &keys_out, NUM_ITEMS);
-	//print_output(input,keys_in,output,keys_out);
-	//print_input(input,keys_in,output,keys_out);
-	//test_output_lists(input,keys_in,output,keys_out,NUM_ITEMS);
-	test_sorted_list_size(input,keys_in,output,keys_out);
-	int errorcount = 0;
-	for(int i = 0; i < NUM_ITEMS-1;i++)
-	{
-		if((output[i] == output[i+1])&&(keys_out[i] > keys_out[i+1]))
+		int64_t * input, * keys_in, *output, *keys_out;
+		int count = 0;
+		input = (int64_t*)malloc(k * sizeof (int64_t));
+		output = (int64_t*)malloc(k * sizeof (int64_t));
+		keys_in = (int64_t*)malloc(k * sizeof (int64_t));
+		keys_out = (int64_t*)malloc(k * sizeof (int64_t));
+		for(int i = 0; i < k;i++)
 		{
-			printf("%d ERROR ",i);	
-			printf("%" PRIu64 " ",output[i]);
-			printf("%" PRIu64 " ",keys_out[i]);
-			printf("%" PRIu64 " ",output[i+1]);
-			printf("%" PRIu64 "\n",keys_out[i+1]);
-			errorcount++;
+			input[i] = rand()%100;
+			keys_in[i] = i;
 		}
-		if(output[i]>output[i+1])
+		avxsort_unaligned(&input,&keys_in, &output, &keys_out, k);
+		
+		
+		printf("The output size: %" PRIu64 "\n",k);
+		
+		
+		int errorcount = 0;
+		for(int i = 0; i < k-1;i++)
 		{
-			printf("%d ERROR ",i);	
-			printf("%" PRIu64 " ",output[i]);
-			printf("%" PRIu64 " ",keys_out[i]);
-			printf("%" PRIu64 " ",output[i+1]);
-			printf("%" PRIu64 "\n",keys_out[i+1]);
+			if((output[i] == output[i+1])&&(keys_out[i] > keys_out[i+1]))
+			{
+				printf("%d ERROR ",i);	
+				printf("%" PRIu64 " ",output[i]);
+				printf("%" PRIu64 " ",keys_out[i]);
+				printf("%" PRIu64 " ",output[i+1]);
+				printf("%" PRIu64 "\n",keys_out[i+1]);
+				errorcount++;
+			}
+			if(output[i]>output[i+1])
+			{
+				printf("%d ERROR ",i);	
+				printf("%" PRIu64 " ",output[i]);
+				printf("%" PRIu64 " ",keys_out[i]);
+				printf("%" PRIu64 " ",output[i+1]);
+				printf("%" PRIu64 "\n",keys_out[i+1]);
+			}
 		}
+		printf("TOTAL ERRORS %d\n",errorcount);
 	}
-	printf("TOTAL ERRORS %d\n",errorcount);
 }
 
-void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out)
+void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,int64_t *keys_out,int64_t nitems)
 {
 	int64_t asdf = 0;
 	asdf = 1;
-	for(int i = 0; i < NUM_ITEMS ; i++)
+	for(int i = 0; i < nitems ; i++)
 	{
 		asdf++;
 	}

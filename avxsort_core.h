@@ -1086,7 +1086,7 @@ inline __attribute__((__always_inline__))
 int keycmp(const void * k1, const void * k2)
 {
     int64_t val = (*(int64_t *)k1 - *(int64_t *)k2);
-	printf("ASDF\n");
+	
     int ret = 0;
     if(val < 0)
         ret = -1;
@@ -1131,6 +1131,7 @@ x2_sort(int64_t *key, int64_t *val, uint32_t nitems)
     }
     std::sort(arr, arr + nitems, kvcmp);
 	*/
+	//used bubble sort for now since it was the most convenient
 	for(int i = 0; i < nitems - 1;i++)
 	{
 		for(int j = 0; j < nitems-i-1;j++)
@@ -1158,7 +1159,7 @@ x2_sort(int64_t *key, int64_t *val, uint32_t nitems)
 			}
 		}
 	}
-	
+	/*
 	for(int i = 0; i < nitems-1; i++)
 	{
 		if(key[i]>key[i+1])
@@ -1170,6 +1171,7 @@ x2_sort(int64_t *key, int64_t *val, uint32_t nitems)
 			printf("NOTSORTED\n");
 		}
 	}
+	*/
    // free(arr);
 	
 	
@@ -1233,6 +1235,7 @@ avxsort_rem(int64_t ** inputptr, int64_t ** inputptrv,
         ptrsv[i][0] = inpv + pos;
         ptrsv[i][1] = outv + pos;
         sizes[i]   = n;
+		//its only 128 items, bubble sort will do
         x2_sort(ptrs[i][0], ptrsv[i][0], n);
 
         /* no need to swap */

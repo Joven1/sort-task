@@ -229,7 +229,6 @@ static inline void _mm256_cmp_kv_pd(const __m256d keyA, const __m256d valA,
 // haven't finish
 #if IFELSEWITHCMOVE
 #define IFELSECONDMOVE(NXT, NXTV, INA, INAV, INB, INBV, INCR)           \
-printf("yespls");                                                           \
     do {                                                                \
         register block4 * tmpA, * tmpB, * tmpAv, *tmpBv;                \
         register int64_t tmpKey;                                        \
@@ -273,7 +272,6 @@ printf("yespls");                                                           \
 
 #elif IFELSEWITHNORMAL
 #define IFELSECONDMOVE(NXT, INA, INB, INCR)                 \
-			printf("YES\n");                                \
             do {                                            \
                 if(*((int64_t *)INA) < *((int64_t *)INB)) { \
                     NXT = INA;                              \
