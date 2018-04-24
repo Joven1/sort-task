@@ -744,11 +744,43 @@ merge16_varlen(int64_t * restrict inpA, int64_t * restrict inpAv,
         /* flush the register to one of the lists */
         int64_t hireg[4] __attribute__((aligned(32)));
         _mm256_store_pd ( (double *)hireg, outreg2h2);
-		//not sure what happened and i am afraid to ask
 		
-        if(*((int64_t *)inA) > *((int64_t*)(hireg+3))) {
+		//new feature
+		int64_t hiregv[4] __attribute__((aligned(32)));
+        _mm256_store_pd ( (double *)hiregv, outreg2h2v);
+		
+		//not sure what happened and i am afraid to ask
+		if(*((int64_t *)inA)  == *((int64_t*)(hireg+3)))
+		{
+			if(*((int64_t *)inAv)  >= *((int64_t*)(hiregv+3)))
+			{
+			//	printf("Casesif %" PRIu64 " %" PRIu64 "\n",*((int64_t *)inA),*((int64_t*)(inAv)));
+			//	printf("Casesif %" PRIu64 " %" PRIu64 "\n",*((int64_t *)hireg+3),*((int64_t*)(hiregv+3)));
+				/* store the last remaining register values to A */
+				inA --;
+				STORE8U(inA, outreg2l1, outreg2l2);
+				STORE8U(((block8 *)inA + 1), outreg2h1, outreg2h2);
+				inAv --;
+				STORE8U(inAv, outreg2l1v, outreg2l2v);
+				STORE8U(((block8 *)inAv + 1), outreg2h1v, outreg2h2v);
+			}
+			else
+			{
+			//	printf("Caseselse %" PRIu64 " %" PRIu64 "\n",*((int64_t *)inA),*((int64_t *)inAv));
+			//	printf("Caseselse %" PRIu64 " %" PRIu64 "\n",*((int64_t *)hireg+3),*((int64_t*)(hiregv+3)));
+				/* store the last remaining register values to B */
+				inB --;
+				STORE8U(inB, outreg2l1, outreg2l2);
+				STORE8U(((block8 *)inB + 1), outreg2h1, outreg2h2);
+				inBv --;
+				STORE8U(inBv, outreg2l1v, outreg2l2v);
+				STORE8U(((block8 *)inBv + 1), outreg2h1v, outreg2h2v);
+			}
+		}
+		else if(*((int64_t *)inA)  >= *((int64_t*)(hireg+3))) {
+			//printf("Casesif %" PRIu64 " %" PRIu64 "\n",*((int64_t *)inA),*((int64_t*)(inAv)));
+			//printf("Casesif %" PRIu64 " %" PRIu64 "\n",*((int64_t *)hireg+3),*((int64_t*)(hiregv+3)));
             /* store the last remaining register values to A */
-			//printf("WTF %" PRIu64 " %" PRIu64"\n",*((int64_t *)inA),*((int64_t*)(hireg+3)));
             inA --;
             STORE8U(inA, outreg2l1, outreg2l2);
             STORE8U(((block8 *)inA + 1), outreg2h1, outreg2h2);
@@ -757,8 +789,9 @@ merge16_varlen(int64_t * restrict inpA, int64_t * restrict inpAv,
             STORE8U(((block8 *)inAv + 1), outreg2h1v, outreg2h2v);
         }
         else {
+			//printf("Caseselse %" PRIu64 " %" PRIu64 "\n",*((int64_t *)inA),*((int64_t *)inAv));
+			//printf("Caseselse %" PRIu64 " %" PRIu64 "\n",*((int64_t *)hireg+3),*((int64_t*)(hiregv+3)));
             /* store the last remaining register values to B */
-			//printf("Kappa\n\n");
             inB --;
             STORE8U(inB, outreg2l1, outreg2l2);
             STORE8U(((block8 *)inB + 1), outreg2h1, outreg2h2);
@@ -1159,7 +1192,7 @@ x2_sort(int64_t *key, int64_t *val, uint32_t nitems)
 			}
 		}
 	}
-	/*
+	
 	for(int i = 0; i < nitems-1; i++)
 	{
 		if(key[i]>key[i+1])
@@ -1171,7 +1204,7 @@ x2_sort(int64_t *key, int64_t *val, uint32_t nitems)
 			printf("NOTSORTED\n");
 		}
 	}
-	*/
+	
    // free(arr);
 	
 	
@@ -1235,7 +1268,7 @@ avxsort_rem(int64_t ** inputptr, int64_t ** inputptrv,
         ptrsv[i][0] = inpv + pos;
         ptrsv[i][1] = outv + pos;
         sizes[i]   = n;
-		//its only 128 items, bubble sort will do
+
         x2_sort(ptrs[i][0], ptrsv[i][0], n);
 
         /* no need to swap */
@@ -1289,4 +1322,15 @@ avxsort_rem(int64_t ** inputptr, int64_t ** inputptrv,
     * inputptr  = ptrs[0][1];
     * outputptrv = ptrsv[0][0];
     * inputptrv  = ptrsv[0][1];
+	
+	if(nitems == 6191)
+	{
+		for(int i = 0; i < nitems; i++)
+		{
+			
+			//printf("INPUT: %" PRIu64 " %" PRIu64 " ",*(*outputptr+i),*(*outputptrv+i));
+			//printf("OUTPUT: %" PRIu64 " %" PRIu64 "\n",*(*outputptr+i),*(*outputptrv+i));
+			
+		}
+	}
 }

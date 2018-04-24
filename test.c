@@ -271,8 +271,13 @@ void test_blocksize()
 
 void test_sort()
 {
+	int z = 1;
+	while(z==1)
+	{
+		printf("yes\n");
 	for(int64_t k = 1; k < NUM_ITEMS; k=2*k)
 	{
+		//printf("K: %" PRIu64 "\n",k);
 		int64_t * input, * keys_in, *output, *keys_out;
 		int count = 0;
 		input = (int64_t*)malloc(k * sizeof (int64_t));
@@ -281,7 +286,7 @@ void test_sort()
 		keys_out = (int64_t*)malloc(k * sizeof (int64_t));
 		for(int i = 0; i < k;i++)
 		{
-			input[i] = rand()%100;
+			input[i] = rand()%2;
 			keys_in[i] = i;
 		}
 		avxsort_unaligned(&input,&keys_in, &output, &keys_out, k);
@@ -301,6 +306,7 @@ void test_sort()
 				printf("%" PRIu64 " ",output[i+1]);
 				printf("%" PRIu64 "\n",keys_out[i+1]);
 				errorcount++;
+				z++;
 			}
 			if(output[i]>output[i+1])
 			{
@@ -309,9 +315,20 @@ void test_sort()
 				printf("%" PRIu64 " ",keys_out[i]);
 				printf("%" PRIu64 " ",output[i+1]);
 				printf("%" PRIu64 "\n",keys_out[i+1]);
+				z++;
 			}
 		}
 		printf("TOTAL ERRORS %d\n",errorcount);
+		if(z == 2)
+		{
+			for(int i = 0; i < k; i++)
+			{
+				printf("%" PRIu64 " ",output[i]);
+				printf("%" PRIu64 "\n",keys_out[i]);
+			}
+			break;
+		}
+	}
 	}
 }
 
@@ -471,6 +488,7 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 	//sort each block of data given along with the blocksize
 	for (i = 0; i < nchunks; i++) {
 		//given each address, sort the input (pass in the argument of itself)
+		
 		avxsort_block(&ptrs[i][0], &ptrsv[i][0], &ptrs[i][1], &ptrsv[i][1], BLOCKSIZE);
 		// dump_arr_int64("check 0", ptrs[i][1], BLOCKSIZE);
 		
@@ -482,10 +500,13 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 		swap(&ptrsv[i][0], &ptrsv[i][1]);
 	}
 
+	
 	//you sort the remaining block of data
 	if (rem) {
+		
 		// xzl_bug_on(1);
 		/* sort the last chunk which is less than BLOCKSIZE */
+		
 		avxsort_rem(&ptrs[i][0], &ptrsv[i][0], &ptrs[i][1], &ptrsv[i][1], rem);
 		// dump_arr_int64("check 1", ptrs[i][1], rem);
 		swap(&ptrs[i][0], &ptrs[i][1]);
@@ -508,7 +529,6 @@ avxsort_unaligned(int64_t ** inputptr, int64_t ** inputptrv,
 	
 	//hypothesis 3: you go from the log2(blocksize) to log2 of n items (rounded up)
 	for (i = LOG2_BLOCKSIZE; i < logN; i++) {
-
 		uint64_t k = 0;
 		for (uint64_t j = 0; j < (nchunks - 1); j += 2) {
 			int64_t * inpA = ptrs[j][0];
