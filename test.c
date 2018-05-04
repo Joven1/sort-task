@@ -230,10 +230,13 @@ void test_sorted_list_size(int64_t * input, int64_t * keys_in,int64_t *output,in
 void test_sort();
 
 
-#define NUM_ITEMS (100000000000)  /* 2 * L2_CACHE_SIZE */
+#define NUM_ITEMS (10000000000000000)  /* 2 * L2_CACHE_SIZE */
+#include <time.h>
 
 int main(int argc, char *argv[])
 {
+	int * ptr;
+	printf("%zu\n",sizeof(ptr));
 		test_sort();
         return 0;
 }
@@ -272,11 +275,20 @@ void test_blocksize()
 void test_sort()
 {
 	int z = 1;
+	double time_spent;
+	srand(time(NULL));
+	clock_t start;
+	start = clock();
+	FILE * fp1; 
+	fp1 = fopen("items.txt","w");
+	FILE * fp2;
+	fp2 = fopen("time.txt","w");
 	while(z==1)
 	{
 		printf("yes\n");
 	for(int64_t k = 1; k < NUM_ITEMS; k=2*k)
 	{
+		
 		//printf("K: %" PRIu64 "\n",k);
 		int64_t * input, * keys_in, *output, *keys_out;
 		int count = 0;
@@ -286,15 +298,21 @@ void test_sort()
 		keys_out = (int64_t*)malloc(k * sizeof (int64_t));
 		for(int i = 0; i < k;i++)
 		{
-			input[i] = rand()%2;
+			input[i] = rand();
 			keys_in[i] = i;
 		}
+		time_spent = (double) (clock()-start)/CLOCKS_PER_SEC;
 		avxsort_unaligned(&input,&keys_in, &output, &keys_out, k);
-		
+		printf("Time: %f\n",time_spent);
 		
 		printf("The output size: %" PRIu64 "\n",k);
-		
-		
+		fprintf(fp1,"%lf\n",time_spent);
+		fprintf(fp2,"%" PRIu64 "\n",k);
+		if(k >= 134217728*2)
+		{
+			fclose(fp1);
+			fclose(fp2);
+		}
 		int errorcount = 0;
 		for(int i = 0; i < k-1;i++)
 		{
@@ -328,6 +346,10 @@ void test_sort()
 			}
 			break;
 		}
+		free(input);
+		free(output);
+		free(keys_in);
+		free(keys_out);
 	}
 	}
 }
